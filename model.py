@@ -3,8 +3,8 @@
      Introduction to Machine Learning (67577)
              IML HACKATHON, June 2020
 
-Author(s): Nitsan
-
+Author(s):
+Gal, Nitsan
 ===================================================
 """
 
