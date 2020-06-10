@@ -4,7 +4,7 @@
              IML HACKATHON, June 2020
 
 Author(s):
-Gal, Nitsan
+Gal
 ===================================================
 """
 
