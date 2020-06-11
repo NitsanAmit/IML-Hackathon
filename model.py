@@ -61,16 +61,13 @@ class FlightPredictor:
 
     def visualize(self, df):
         # Airport vs. delay
-        df["is_delayed"] = df['DelayFactor'].astype(int) + 1
+        df["is_delayed"] = (df['DelayFactor'] != -1).astype(int)
         print(df["is_delayed"])
 
-        p = (ggplot(df, aes(x='Dest', y='is_delayed')) + geom_line(size=2, group=1) +
-         geom_point(size=6, shape='.', fill="white"))  #dest
+        df_dest_delayed = df.groupby('Dest').agg({'is_delayed': ['mean']})
+        df_origin_delayed = df.groupby('Origin').agg({'is_delayed': ['mean']})
 
-        print(p)
-
-        # ggplot(df, aes(x='BP')) + geom_histogram(binwidth=5) #origin
-
+        print(df_dest_delayed)
 
 
 def add_arrival_departure_bins(jointDf):
