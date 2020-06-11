@@ -34,7 +34,7 @@ class FlightPredictor:
         self.x_train, self.x_validate, self.y_train, self.y_validate = train_test_split(x_temp, y_temp, test_size=0.2)
 
         # Only use x_train and y_train!!!!!!!!!!!!!!!
-        self.clean_up_data(path_to_weather)
+        self.clean_up_data(self.x_train, self.y_train)
 
     def predict(self, x):
         """
@@ -54,22 +54,10 @@ class FlightPredictor:
         add_is_same_state(jointDf)
         if path_to_weather:
             add_weather_data(jointDf, path_to_weather)
+        cross_holidays(jointDf)
         print(jointDf.head())
         # TODO keep goin'
 
-    def add_holidays_column(self):
-        pass
-
-    def cross_holidays(self):
-        self.['Date'] = pd.to_datetime()
-        dr = pd.date_range(start='2010-01-01', end='2019-12-31')
-        # TODO add
-        df = pd.DataFrame()
-        df['Date'] = dr
-        cal = calendar()
-        holidays = cal.holidays(start=dr.min(), end=dr.max())
-        df['Holiday'] = df['Date'].isin(holidays)
-        print(df)
 
     def visualize(self, df):
         # Airport vs. delay
@@ -82,6 +70,7 @@ class FlightPredictor:
         print(p)
 
         # ggplot(df, aes(x='BP')) + geom_histogram(binwidth=5) #origin
+
 
 
 def add_arrival_departure_bins(jointDf):
@@ -111,22 +100,30 @@ def add_weather_data(jointDf, path_to_weather):
     weather_data = pd.read_csv(path_to_weather)
 
 
+
 def factorize_delay(jointDf):
     # fix DelayFactor to numeric
     delay_factor = jointDf['DelayFactor'].factorize()
     jointDf['DelayFactor'] = delay_factor[0]
     print(delay_factor[1])
 
-def add_holidays_column(self):
-    pass
 
-def cross_holidays(df):
-    df['Date'] = pd.to_datetime()
-    dr = pd.date_range(start='2010-01-01', end='2019-12-31')
-    # TODO add
-    df = pd.DataFrame()
-    df['Date'] = dr
+def add_holidays_column(df):
+    df = df.join((cross_holidays(df))['Holiday'])
+    return df
+
+def cross_holidays(jointDf):
+    jointDf['FlightDate'] = pd.to_datetime(jointDf['FlightDate'])
+    # dateRange = pd.date_range(start=jointDf['FlightDate'].min(), end=jointDf[
+    #     'FlightDate'].max())
+    # df = pd.DataFrame()
+    # df['Date'] = dateRange
     cal = calendar()
-    holidays = cal.holidays(start=dr.min(), end=dr.max())
-    df['Holiday'] = df['Date'].isin(holidays)
-    print(df)
+    holidays = cal.holidays(start=jointDf['FlightDate'].min(), end=jointDf[
+        'FlightDate'].max())
+
+    #TODO make sure holiday only contains the date that Holiday == true
+    #TODO make sure holiday is 1-dimenstional
+
+    jointDf["is_holiday"] = jointDf["FlightDate"].isin(holidays)
+    return
