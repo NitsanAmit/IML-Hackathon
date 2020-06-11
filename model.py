@@ -49,11 +49,11 @@ class FlightPredictor:
 
         print(self._lasso_regression.score(self.x_train, self.y_train_regression.values.ravel()))
         # classification
-        self._regression_model = OneVsRestClassifier(DecisionTreeClassifier(max_depth=11))
-        self._regression_model.fit(self.x_train, self.y_train_classification)
+        self._classification_model = OneVsRestClassifier(DecisionTreeClassifier(max_depth=11))
+        self._classification_model.fit(self.x_train, self.y_train_classification)
 
-        print(self._regression_model.score(self.x_train, self.y_train_classification))
-        print(self._regression_model.n_classes_)
+        print(self._classification_model.score(self.x_train, self.y_train_classification))
+        print(self._classification_model.n_classes_)
 
     def predict(self, x):
         """
@@ -67,7 +67,7 @@ class FlightPredictor:
         # regression
         regression = self._lasso_regression.predict(df)
         # classification
-        classification = self._regression_model.predict(df)  # TODO - STRINGS
+        classification = self._classification_model.predict(df)
         prediction = pd.DataFrame({'PredArrDelay': regression, 'PredDelayFactor': classification})
         prediction['PredDelayFactor'] = prediction['PredDelayFactor'].apply(self.get_label)
         return prediction
@@ -98,7 +98,6 @@ class FlightPredictor:
         if row != -1:
             return self.delay_factor[1][row]
         return np.nan
-
 
 def cv_dt(X, y):
     depth = []
