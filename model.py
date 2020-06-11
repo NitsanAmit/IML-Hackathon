@@ -35,8 +35,6 @@ class FlightPredictor:
         y = raw_data[["ArrDelay", "DelayFactor"]]
         x_train, self.x_test, y_train, self.y_test = train_test_split(X, y, test_size=0.2)
 
-        self.data_to_pred = x_train  # TODO - DELETE!!!!!!!!!!!!!!!!!1
-
         train = self.clean_up_train(path_to_weather, x_train, y_train)
         self._cols_name = train.columns.values.tolist()
         self.y_train_regression = train.loc[:, "ArrDelay"].to_frame()
@@ -47,13 +45,9 @@ class FlightPredictor:
         # regression
         self._lasso_regression = LassoCV(cv=5, random_state=0).fit(self.x_train, self.y_train_regression.values.ravel())
 
-        print(self._lasso_regression.score(self.x_train, self.y_train_regression.values.ravel()))
         # classification
         self._classification_model = OneVsRestClassifier(DecisionTreeClassifier(max_depth=11))
         self._classification_model.fit(self.x_train, self.y_train_classification)
-
-        print(self._classification_model.score(self.x_train, self.y_train_classification))
-        print(self._classification_model.n_classes_)
 
     def predict(self, x):
         """
@@ -74,7 +68,7 @@ class FlightPredictor:
 
     def score(self):
         m = len(self.y_test)
-        y_hat = self._regression_model.predict(self.x_test)
+        y_hat = self._classification_model.predict(self.x_test)
         accuracy = np.sum(self.y_test == y_hat) / m
         print(accuracy)
         print(self._lasso_regression.score(self.x_test,
