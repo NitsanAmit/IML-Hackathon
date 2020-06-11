@@ -3,7 +3,7 @@
      Introduction to Machine Learning (67577)
              IML HACKATHON, June 2020
 
-Author(s): Nitsan Shahar Gal Noa
+Author(s): Nitsan, Shahar, Gal, Noa
 
 ===================================================
 """
@@ -18,10 +18,7 @@ from matplotlib import pyplot as plt
 CSV_PATH = "data/train_data.csv"
 
 
-
-
 class FlightPredictor:
-
     def __init__(self, path_to_weather=''):
         """
         Initialize an object from this class.
@@ -31,8 +28,8 @@ class FlightPredictor:
         raw_data = pd.read_csv(CSV_PATH)
         X = raw_data.drop(["ArrDelay", "DelayFactor"], axis=1)
         y = raw_data[["ArrDelay", "DelayFactor"]]
-        self.x_temp, self.x_test, self.y_temp, self.y_test = train_test_split(X, y, test_size=0.2)
-        self.x_train, self.x_validate, self.y_train, self.y_validate = train_test_split(self.x_temp, self.y_temp, test_size=0.2)
+        x_temp, self.x_test, y_temp, self.y_test = train_test_split(X, y, test_size=0.2)
+        self.x_train, self.x_validate, self.y_train, self.y_validate = train_test_split(x_temp, y_temp, test_size=0.2)
 
         # Only use x_train and y_train!!!!!!!!!!!!!!!
         self.clean_up_data(self.x_train, self.y_train)
@@ -52,9 +49,8 @@ class FlightPredictor:
         add_arrival_departure_bins(jointDf)
         make_flight_date_canonical(jointDf)
         factorize_delay(jointDf)
-
-        self.visualize(jointDf)
-        # TODO keep goin'
+        add_is_same_state(jointDf)
+        print(jointDf.head())
 
     def visualize(self, df):
         # Airport vs. delay
@@ -86,6 +82,9 @@ def get_dummies(jointDf):
 
 
 def make_flight_date_canonical(jointDf):
+    pass
+
+def add_is_same_state(jointDf):
     pass
 
 def factorize_delay(jointDf):
