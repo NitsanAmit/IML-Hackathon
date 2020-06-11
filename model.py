@@ -78,51 +78,51 @@ class FlightPredictor:
         # df_dest_delayed = df.groupby('Dest').agg({'is_delayed': ['mean']})
 
 
-def remove_outliers(jointDf):
-    entries_before = jointDf.shape[0]
-    jointDf = jointDf[abs(jointDf["ArrDelay"] - np.mean(jointDf["ArrDelay"])) <
-                      3.5 * np.std(jointDf["ArrDelay"])]
-    jointDf = jointDf[~jointDf["ArrDelay"].isna()]
-    removed = entries_before - jointDf.shape[0]
+def remove_outliers(joint_df):
+    entries_before = joint_df.shape[0]
+    joint_df = joint_df[abs(joint_df["ArrDelay"] - np.mean(joint_df["ArrDelay"])) <
+                        3.5 * np.std(joint_df["ArrDelay"])]
+    joint_df = joint_df[~joint_df["ArrDelay"].isna()]
+    removed = entries_before - joint_df.shape[0]
     print("Removed " + str(removed) + " rows in cleanup")
 
 
-def add_arrival_departure_bins(jointDf):
+def add_arrival_departure_bins(joint_df):
     two_hour_bins = np.linspace(0, 2400, num=13)
     two_hour_labels = np.rint(np.linspace(0, 22, 12))
-    jointDf["DepBin"] = pd.cut(jointDf['CRSDepTime'], bins=two_hour_bins,
-                               labels=two_hour_labels)
-    jointDf["ArrBin"] = pd.cut(jointDf['CRSArrTime'], bins=two_hour_bins,
-                               labels=two_hour_labels)
-    jointDf.drop(['CRSDepTime', 'CRSArrTime'], axis=1)
+    joint_df["DepBin"] = pd.cut(joint_df['CRSDepTime'], bins=two_hour_bins,
+                                labels=two_hour_labels)
+    joint_df["ArrBin"] = pd.cut(joint_df['CRSArrTime'], bins=two_hour_bins,
+                                labels=two_hour_labels)
+    joint_df.drop(['CRSDepTime', 'CRSArrTime'], axis=1)
 
 
-def get_dummies(jointDf):
-    return pd.get_dummies(jointDf, columns=['DayOfWeek', 'Reporting_Airline', 'Dest', 'Origin'],
+def get_dummies(joint_df):
+    return pd.get_dummies(joint_df, columns=['DayOfWeek', 'Reporting_Airline', 'Dest', 'Origin'],
                           prefix=['weekday', 'airline', 'DestAirport', 'OriginAirport'])
 
-def drop_features(jointDf):
-    return jointDf.drop(['OriginCityName', 'OriginState', 'DestCityName', 'DestState'], axis=1)
+def drop_features(joint_df):
+    return joint_df.drop(['OriginCityName', 'OriginState', 'DestCityName', 'DestState'], axis=1)
 
 
-def make_flight_date_canonical(jointDf):
-    jointDf["CanonicalFlightDate"] = pd.DataFrame(pd.to_datetime(jointDf["FlightDate"], errors="coerce")).values.astype(
+def make_flight_date_canonical(joint_df):
+    joint_df["CanonicalFlightDate"] = pd.DataFrame(pd.to_datetime(joint_df["FlightDate"], errors="coerce")).values.astype(
         float) / 10 ** 10
-    jointDf["CanonicalFlightDate"] = jointDf["CanonicalFlightDate"] - np.min(jointDf["CanonicalFlightDate"])
+    joint_df["CanonicalFlightDate"] = joint_df["CanonicalFlightDate"] - np.min(joint_df["CanonicalFlightDate"])
 
 
 
-def add_is_same_state(jointDf):
-    jointDf["SameState"] = jointDf["OriginState"] == jointDf["DestState"]
+def add_is_same_state(joint_df):
+    joint_df["SameState"] = joint_df["OriginState"] == joint_df["DestState"]
 
 
-def add_weather_data(jointDf, path_to_weather):
+def add_weather_data(joint_df, path_to_weather):
     weather_data = pd.read_csv(path_to_weather)
     weather_data['day'] = pd.to_datetime(weather_data['day'])
     #TODO match jointDf["FlightDate"] to weather_data["date"]
     #TODO match jointDf["Origin" or "Dest"] to weather_data["station"]
     #TODO create columns in jointDf based on weather_data columns:
-    pd.merge(jointDf, weather_data, left_on="FlightDate", right_on="day")
+    pd.merge(joint_df, weather_data, left_on="FlightDate", right_on="day")
 
     # jointDf["snowed"]
 
@@ -134,17 +134,17 @@ def add_weather_data(jointDf, path_to_weather):
 
 
 
-def factorize_delay(jointDf):
+def factorize_delay(joint_df):
     # fix DelayFactor to numeric
-    delay_factor = jointDf['DelayFactor'].factorize()
-    jointDf['DelayFactor'] = delay_factor[0]
+    delay_factor = joint_df['DelayFactor'].factorize()
+    joint_df['DelayFactor'] = delay_factor[0]
     print(delay_factor[1])
 
 
-def cross_holidays(jointDf):
-    jointDf['FlightDate'] = pd.to_datetime(jointDf['FlightDate'])
+def cross_holidays(joint_df):
+    joint_df['FlightDate'] = pd.to_datetime(joint_df['FlightDate'])
     cal = calendar()
-    holidays = cal.holidays(start=jointDf['FlightDate'].min(), end=jointDf[
+    holidays = cal.holidays(start=joint_df['FlightDate'].min(), end=joint_df[
         'FlightDate'].max())
-    jointDf["is_holiday"] = jointDf["FlightDate"].isin(holidays)
+    joint_df["is_holiday"] = joint_df["FlightDate"].isin(holidays)
     return
