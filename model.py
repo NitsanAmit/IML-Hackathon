@@ -9,6 +9,7 @@ Author(s): Nitsan Shahar Gal Noa
 """
 import random
 import pandas as pd
+import numpy as np
 from sklearn import datasets, linear_model
 from sklearn.model_selection import train_test_split
 from matplotlib import pyplot as plt
@@ -28,6 +29,7 @@ class FlightPredictor:
         x_train, x_validate, y_train, y_validate = train_test_split(x_temp, y_temp, test_size=0.2)
 
         # Only use x_train and y_train!!!!!!!!!!!!!!!
+        self.clean_up_data(x_train, y_train)
 
     def predict(self, x):
         """
@@ -37,3 +39,13 @@ class FlightPredictor:
         @return: A pandas DataFrame with shape (m, 2) with your prediction
         """
         raise NotImplementedError
+
+    def clean_up_data(self, X, y):
+        jointDf = X.join(y)
+        jointDf = pd.get_dummies(jointDf, columns=['DayOfWeek', 'Reporting_Airline'], prefix=['weekday',
+                                                                               'airline'])
+        print(jointDf.head())
+        # TODO keep goin'
+
+    def visualize(self, X, y):
+        pass
