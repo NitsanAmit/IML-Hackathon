@@ -82,7 +82,6 @@ class FlightPredictor:
         # ggplot(df, aes(x='BP')) + geom_histogram(binwidth=5) #origin
 
 
-
 def add_arrival_departure_bins(jointDf):
     two_hour_bins = np.linspace(0, 2400, num=13)
     two_hour_labels = np.rint(np.linspace(0, 22, 12))
@@ -101,8 +100,10 @@ def get_dummies(jointDf):
 def make_flight_date_canonical(jointDf):
     pass
 
+
 def add_is_same_state(jointDf):
-    pass
+    jointDf["SameState"] = np.rint(jointDf["OriginState"] == jointDf["DestState"])
+
 
 def factorize_delay(jointDf):
     # fix DelayFactor to numeric
