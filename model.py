@@ -33,9 +33,11 @@ class FlightPredictor:
         self.path_to_weather = path_to_weather
         X = raw_data.drop(["ArrDelay", "DelayFactor"], axis=1)
         y = raw_data[["ArrDelay", "DelayFactor"]]
-        x_train, self.x_test, y_train, self.y_test = train_test_split(X, y, test_size=0.2)
 
-        train = self.clean_up_train(path_to_weather, x_train, y_train)
+        # x_train, self.x_test, y_train, self.y_test = train_test_split(X, y, test_size=0.2)
+        # train = self.clean_up_train(path_to_weather, x_train, y_train)
+
+        train = self.clean_up_train(path_to_weather, X, y)
         self._cols_name = train.columns.values.tolist()
         self.y_train_regression = train.loc[:, "ArrDelay"].to_frame()
         self.y_train_classification = train.loc[:, "DelayFactor"].to_frame()
@@ -168,7 +170,7 @@ def remove_outliers(joint_df):
                         3.5 * np.std(joint_df["ArrDelay"])]
     joint_df = joint_df[~joint_df["ArrDelay"].isna()]
     removed = entries_before - joint_df.shape[0]
-    print("Removed " + str(removed) + " rows in cleanup")
+    # print("Removed " + str(removed) + " rows in cleanup")
     return joint_df
 
 
