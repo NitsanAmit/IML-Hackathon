@@ -21,13 +21,14 @@ CSV_PATH = "data/train_data.csv"
 
 
 class FlightPredictor:
-    def __init__(self, path_to_weather=''):
+    def __init__(self, path_to_weather=None):
         """
         Initialize an object from this class.
         @param path_to_weather: The path to a csv file containing weather data.
         """
         random.seed(5)
         raw_data = pd.read_csv(CSV_PATH)
+        self.path_to_weather = path_to_weather
         X = raw_data.drop(["ArrDelay", "DelayFactor"], axis=1)
         y = raw_data[["ArrDelay", "DelayFactor"]]
         x_train, self.x_test, y_train, self.y_test = train_test_split(X, y, test_size=0.2)
@@ -52,33 +53,37 @@ class FlightPredictor:
         @param x: A pandas DataFrame with shape (m, 15)
         @return: A pandas DataFrame with shape (m, 2) with your prediction
         """
-        df = self.clean_up_test()
-        raise NotImplementedError
-
-    def clean_up_data(self, joint_df, path_to_weather=None):
-        joint_df = remove_outliers(joint_df)
-        joint_df = add_arrival_departure_bins(joint_df)
-        joint_df = make_flight_date_canonical(joint_df)
-        joint_df = factorize_delay(joint_df)
-        joint_df = add_is_same_state(joint_df)
-        if path_to_weather: # TODO         if path_to_weather and not disqualify_weather:
-            add_weather_data(joint_df, path_to_weather)
-        joint_df = get_dummies(joint_df)
-        joint_df = cross_holidays(joint_df)
-        joint_df = drop_features(joint_df)
-        return joint_df
+        df = self.clean_up_test(x)
+        return self._lasso_regression.predict(df) # TODO - add classifer
 
     def clean_up_train(self, path_to_weather, X, y):
         joint_df = X.join(y)
-        joint_df = self.clean_up_data(joint_df)
+        joint_df = clean_up_data(joint_df, path_to_weather)
+        return joint_df
+
+
+    def clean_up_test(self, X):
+        joint_df = clean_up_data(X, self.path_to_weather)
+        test_col_names = joint_df.columns.values.tolist()
+        for i in range(len(self._cols_name)):
+            if self._cols_name[i] not in test_col_names:
+                joint_df.insert(loc=i, cloumn=self._cols_name[i], value=np.zeros(X.shape[0]))
         return joint_df
 
 
 
-    def clean_up_test(self, X):
-        joint_df = self.clean_up_data(X)
-        
-
+def clean_up_data(joint_df, path_to_weather):
+    joint_df = remove_outliers(joint_df)
+    joint_df = add_arrival_departure_bins(joint_df)
+    joint_df = make_flight_date_canonical(joint_df)
+    joint_df = factorize_delay(joint_df)
+    joint_df = add_is_same_state(joint_df)
+    if path_to_weather: # TODO         if path_to_weather and not disqualify_weather:
+        add_weather_data(joint_df, path_to_weather)
+    joint_df = get_dummies(joint_df)
+    joint_df = cross_holidays(joint_df)
+    joint_df = drop_features(joint_df)
+    return joint_df
 
 def add_bias(df):
     df.insert(loc=0, column='bias', value=np.ones(df.shape[0]))
