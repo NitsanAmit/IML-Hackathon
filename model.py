@@ -57,16 +57,15 @@ class FlightPredictor:
     def clean_up_data(self, path_to_weather, X, y):
         joint_df = X.join(y)
         joint_df = remove_outliers(joint_df)
-        joint_df = get_dummies(joint_df)
         joint_df = add_arrival_departure_bins(joint_df)
         joint_df = make_flight_date_canonical(joint_df)
         joint_df = factorize_delay(joint_df)
         joint_df = add_is_same_state(joint_df)
-        # if path_to_weather:
-        #     add_weather_data(joint_df, path_to_weather)
+        if path_to_weather:
+            add_weather_data(joint_df, path_to_weather)
+        joint_df = get_dummies(joint_df)
         joint_df = cross_holidays(joint_df)
         joint_df = drop_features(joint_df)
-        # self.visualize(joint_df)
         return joint_df
 
 
@@ -114,15 +113,14 @@ def remove_outliers(joint_df):
     joint_df = joint_df[~joint_df["ArrDelay"].isna()]
     removed = entries_before - joint_df.shape[0]
     print("Removed " + str(removed) + " rows in cleanup")
+    return joint_df
 
 
 def add_arrival_departure_bins(joint_df):
-    two_hour_bins = np.linspace(0, 2400, num=25)
-    two_hour_labels = np.rint(np.linspace(0, 23, 24))
-    joint_df["DepBin"] = pd.cut(joint_df['CRSDepTime'], bins=two_hour_bins,
-                                labels=two_hour_labels)
-    joint_df["ArrBin"] = pd.cut(joint_df['CRSArrTime'], bins=two_hour_bins,
-                                labels=two_hour_labels)
+    hour_bins = np.linspace(0, 2400, num=25)
+    hour_labels = np.rint(np.linspace(0, 23, 24))
+    joint_df["DepBin"] = pd.cut(joint_df['CRSDepTime'], bins=hour_bins, labels=hour_labels)
+    joint_df["ArrBin"] = pd.cut(joint_df['CRSArrTime'], bins=hour_bins, labels=hour_labels)
     joint_df.drop(['CRSDepTime', 'CRSArrTime'], axis=1)
     return joint_df
 
@@ -133,7 +131,8 @@ def get_dummies(joint_df):
 
 
 def drop_features(joint_df):
-    return joint_df.drop(['Tail_Number', 'OriginCityName', 'OriginState', 'DestCityName', 'DestState'], axis=1)
+    return joint_df.drop(['Tail_Number', 'OriginCityName', 'OriginState', 'DestCityName',
+                         'DestState', 'Flight_Number_Reporting_Airline', 'CRSElapsedTime'], axis=1)
 
 
 def make_flight_date_canonical(joint_df):
@@ -150,20 +149,18 @@ def add_is_same_state(joint_df):
 
 
 def add_weather_data(joint_df, path_to_weather):
-    weather_data = pd.read_csv(path_to_weather, low_memory=False)
-
-    # jointDf["snowed"]
-    # TODO match jointDf["FlightDate"] to weather_data["date"]
-    # TODO match jointDf["Origin" or "Dest"] to weather_data["station"]
-    # TODO create columns in jointDf based on weather_data columns:
-
-    # jointDf["snowed"]
-
-    # snow_in -> snowed (boolean) (could be None / -99 / 0 if data is missing)
-    # precip_in -> precipitation (float) (check possible nan types)
-    # avg_wind_speed_kts -> avg_wing_spd (float)
-    # avg_wind_drct -> avg_wind_dir (float)
-    # min_temp_f -> min_temp (float)
+    weather_data = pd.read_csv(path_to_weather,
+                               index_col=["day", "station"],
+                               usecols=["day", "station", "precip_in", "avg_wind_speed_kts",
+                                          "avg_wind_drct", "snow_in"])
+    joint_df["FlightDate"] = joint_df["FlightDate"].apply(convert_date)
+    keys = [tuple(x) for x in joint_df[["FlightDate", "Origin"]].to_numpy()]
+    rows_with_weather_data = pd.Series(keys).isin(weather_data.index).array
+    joint_df = joint_df[rows_with_weather_data]
+    keys = pd.Series(keys)[rows_with_weather_data].tolist()
+    weather_data_rows = weather_data.loc[keys]
+    weather_data_rows = weather_data_rows.reset_index(drop=True)
+    return pd.concat([joint_df, weather_data_rows], axis=1)
 
 
 
