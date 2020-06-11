@@ -46,24 +46,25 @@ class FlightPredictor:
         raise NotImplementedError
 
     def clean_up_data(self, path_to_weather):
-        jointDf = self.x_train.join(self.y_train)
-        jointDf = get_dummies(jointDf)
-        add_arrival_departure_bins(jointDf)
-        make_flight_date_canonical(jointDf)
-        factorize_delay(jointDf)
-        add_is_same_state(jointDf)
-        if path_to_weather:
-            add_weather_data(jointDf, path_to_weather)
-        cross_holidays(jointDf)
-        add_weather_data(jointDf, path_to_weather)
-        jointDf = drop_features(jointDf)
-        # if path_to_weather:
-        #     add_weather_data(jointDf, path_to_weather)
-        # cross_holidays(jointDf)
-        self.visualize(jointDf)
-        print(jointDf.head())
-        # TODO keep goin'
+        joint_df = self.x_train.join(self.y_train)
+        remove_outliers(joint_df)
+        joint_df = get_dummies(joint_df)
+        add_arrival_departure_bins(joint_df)
+        make_flight_date_canonical(joint_df)
+        factorize_delay(joint_df)
+        add_is_same_state(joint_df)
 
+        if path_to_weather:
+            add_weather_data(joint_df, path_to_weather)
+        cross_holidays(joint_df)
+        add_weather_data(joint_df, path_to_weather)
+        joint_df = drop_features(joint_df)
+        # if path_to_weather:
+        #     add_weather_data(joint_df, path_to_weather)
+        # cross_holidays(joint_df)
+        self.visualize(joint_df)
+        print(joint_df.head())
+        # TODO keep goin'
 
     def visualize(self, df):
         # Airport vs. delay
@@ -76,6 +77,14 @@ class FlightPredictor:
 
         # df_dest_delayed = df.groupby('Dest').agg({'is_delayed': ['mean']})
 
+
+def remove_outliers(jointDf):
+    entries_before = jointDf.shape[0]
+    jointDf = jointDf[abs(jointDf["ArrDelay"] - np.mean(jointDf["ArrDelay"])) <
+                      3.5 * np.std(jointDf["ArrDelay"])]
+    jointDf = jointDf[~jointDf["ArrDelay"].isna()]
+    removed = entries_before - jointDf.shape[0]
+    print("Removed " + str(removed) + " rows in cleanup")
 
 
 def add_arrival_departure_bins(jointDf):
