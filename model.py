@@ -10,10 +10,11 @@ Author(s): Nitsan, Shahar, Gal, Noa
 import random
 import pandas as pd
 import numpy as np
-from plotnine import *
 from sklearn import datasets, linear_model
 from sklearn.model_selection import train_test_split
 from matplotlib import pyplot as plt
+from pandas.tseries.holiday import USFederalHolidayCalendar as calendar
+
 
 CSV_PATH = "data/train_data.csv"
 
@@ -51,6 +52,21 @@ class FlightPredictor:
         factorize_delay(jointDf)
         add_is_same_state(jointDf)
         print(jointDf.head())
+        # TODO keep goin'
+
+    def add_holidays_column(self):
+        pass
+
+    def cross_holidays(self):
+        # self.['Date'] = pd.to_datetime()
+        dr = pd.date_range(start='2010-01-01', end='2019-12-31')
+        # TODO add
+        df = pd.DataFrame()
+        df['Date'] = dr
+        cal = calendar()
+        holidays = cal.holidays(start=dr.min(), end=dr.max())
+        df['Holiday'] = df['Date'].isin(holidays)
+        print(df)
 
     def visualize(self, df):
         # Airport vs. delay
