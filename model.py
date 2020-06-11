@@ -16,6 +16,7 @@ from sklearn.model_selection import train_test_split
 from matplotlib import pyplot as plt
 from pandas.tseries.holiday import USFederalHolidayCalendar as calendar
 from sklearn.linear_model import LassoCV
+from sklearn.linear_model import LogisticRegressionCV
 
 CSV_PATH = "data/train_data.csv"
 disqualify_weather = False
@@ -43,6 +44,9 @@ class FlightPredictor:
         # regression
         self._lasso_regression = LassoCV(cv=5, random_state=0).fit(self.x_train, self.y_train_regression.values.ravel())
 
+        # classification
+        self._logistic_regression = LogisticRegressionCV(Cs=10, cv=5, multi_class='multinomial'). \
+            fit(self.x_train, self.y_train_classification.values.ravel())
 
     def predict(self, x):
         """
@@ -52,14 +56,19 @@ class FlightPredictor:
         @return: A pandas DataFrame with shape (m, 2) with your prediction
         """
         df = self.clean_up_test(x)
-        return self._lasso_regression.predict(df) # TODO - add classifer
+
+        # regression
+        regression = self._lasso_regression.predict(df)
+        # classification
+        classification = self._logistic_regression.predict(df)
+        prediction = pd.DataFrame({'PredArrDelay': regression, 'PredDelayFactor' : classification})
+        return prediction
 
     def clean_up_train(self, path_to_weather, X, y):
         joint_df = X.join(y)
         joint_df = factorize_delay(joint_df)
         joint_df = clean_up_data(joint_df, path_to_weather)
         return joint_df
-
 
     def clean_up_test(self, X):
         joint_df = clean_up_data(X, self.path_to_weather)
@@ -82,6 +91,7 @@ def clean_up_data(joint_df, path_to_weather):
     joint_df = cross_holidays(joint_df)
     joint_df = drop_features(joint_df)
     return joint_df
+
 
 def add_bias(df):
     df.insert(loc=0, column='bias', value=np.ones(df.shape[0]))
@@ -153,7 +163,7 @@ def get_dummies(joint_df):
 
 def drop_features(joint_df):
     return joint_df.drop(['Tail_Number', 'OriginCityName', 'OriginState', 'DestCityName',
-                         'DestState', 'Flight_Number_Reporting_Airline', 'CRSElapsedTime', 'FlightDate'], axis=1)
+                          'DestState', 'Flight_Number_Reporting_Airline', 'CRSElapsedTime', 'FlightDate'], axis=1)
 
 
 def make_flight_date_canonical(joint_df):
@@ -173,8 +183,8 @@ def add_weather_data(joint_df, path_to_weather):
     weather_data = pd.read_csv(path_to_weather,
                                index_col=["day", "station"],
                                usecols=["day", "station", "precip_in", "avg_wind_speed_kts",
-                                          "avg_wind_drct", "snow_in"])
-    joint_df["FlightDate"] = joint_df["FlightDate"].apply(convert_date) # change the date of our
+                                        "avg_wind_drct", "snow_in"])
+    joint_df["FlightDate"] = joint_df["FlightDate"].apply(convert_date)  # change the date of our
     # df to match the weather data
 
     # create a list of tuples to be used as multi-index keys for weather_data
@@ -211,7 +221,7 @@ def cross_holidays(joint_df):
 def convert_date(str):
     strList = str.split("-")
     strList[0] = strList[0][2:4]
-    return strList[2]+"-"+strList[1]+"-"+strList[0]
+    return strList[2] + "-" + strList[1] + "-" + strList[0]
 
 
 
