@@ -114,7 +114,6 @@ def remove_outliers(joint_df):
     joint_df = joint_df[~joint_df["ArrDelay"].isna()]
     removed = entries_before - joint_df.shape[0]
     print("Removed " + str(removed) + " rows in cleanup")
-    return joint_df
 
 
 def add_arrival_departure_bins(joint_df):
@@ -184,3 +183,14 @@ def cross_holidays(joint_df):
     joint_df["is_holiday"] = joint_df["FlightDate"].isin(holidays)
     joint_df = joint_df.drop(['FlightDate'], axis=1)
     return joint_df
+
+
+def convert_date(str):
+    strList = str.split("-")
+    strList[0] = strList[0][2:4]
+    return strList[2]+"-"+strList[1]+"-"+strList[0]
+
+
+
+def drop_outliers(jointDf):
+    pass
