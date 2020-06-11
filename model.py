@@ -43,8 +43,6 @@ class FlightPredictor:
         # regression
         self._lasso_regression = LassoCV(cv=5, random_state=0).fit(self.x_train, self.y_train_regression.values.ravel())
 
-    # def fit(self, X_train, y_train):
-    #     self._lasso_regression.fit(X_train, y_train)
 
     def predict(self, x):
         """
@@ -58,6 +56,7 @@ class FlightPredictor:
 
     def clean_up_train(self, path_to_weather, X, y):
         joint_df = X.join(y)
+        joint_df = factorize_delay(joint_df)
         joint_df = clean_up_data(joint_df, path_to_weather)
         return joint_df
 
@@ -76,7 +75,6 @@ def clean_up_data(joint_df, path_to_weather):
     joint_df = remove_outliers(joint_df)
     joint_df = add_arrival_departure_bins(joint_df)
     joint_df = make_flight_date_canonical(joint_df)
-    joint_df = factorize_delay(joint_df)
     joint_df = add_is_same_state(joint_df)
     if path_to_weather: # TODO         if path_to_weather and not disqualify_weather:
         add_weather_data(joint_df, path_to_weather)
