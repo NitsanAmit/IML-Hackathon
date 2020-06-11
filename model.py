@@ -61,10 +61,10 @@ class FlightPredictor:
         joint_df = make_flight_date_canonical(joint_df)
         joint_df = factorize_delay(joint_df)
         joint_df = add_is_same_state(joint_df)
-        # if path_to_weather:
-        #     add_weather_data(joint_df, path_to_weather)
+        if path_to_weather: # TODO         if path_to_weather and not disqualify_weather:
+            add_weather_data(joint_df, path_to_weather)
         joint_df = get_dummies(joint_df)
-        # joint_df = cross_holidays(joint_df)
+        joint_df = cross_holidays(joint_df)
         joint_df = drop_features(joint_df)
         return joint_df
 
@@ -171,14 +171,20 @@ def add_weather_data(joint_df, path_to_weather):
                                index_col=["day", "station"],
                                usecols=["day", "station", "precip_in", "avg_wind_speed_kts",
                                           "avg_wind_drct", "snow_in"])
-    joint_df["FlightDate"] = joint_df["FlightDate"].apply(convert_date)
+    joint_df["FlightDate"] = joint_df["FlightDate"].apply(convert_date) # change the date of our
+    # df to match the weather data
+
+    # create a list of tuples to be used as multi-index keys for weather_data
     keys = [tuple(x) for x in joint_df[["FlightDate", "Origin"]].to_numpy()]
+
     rows_with_weather_data = pd.Series(keys).isin(weather_data.index).array
-    joint_df = joint_df[rows_with_weather_data]
+    joint_df = joint_df[rows_with_weather_data] # TODO maybe check percent of entries removed,
+    # TODO and decided whether to proceed or not (if not doing this - make sure to not add to
+    #  test data)
     keys = pd.Series(keys)[rows_with_weather_data].tolist()
     weather_data_rows = weather_data.loc[keys]
     weather_data_rows = weather_data_rows.reset_index(drop=True)
-    return pd.concat([joint_df, weather_data_rows], axis=1)
+    return pd.concat([joint_df, weather_data_rows], axis=1) # TODO clean outlier afterwards
 
 
 def factorize_delay(joint_df):
