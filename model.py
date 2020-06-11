@@ -3,7 +3,7 @@
      Introduction to Machine Learning (67577)
              IML HACKATHON, June 2020
 
-Author(s): Nitsan Shahar Gal Noa
+Author(s): Nitsan, Shahar, Gal, Noa
 
 ===================================================
 """
@@ -13,6 +13,7 @@ import numpy as np
 from sklearn import datasets, linear_model
 from sklearn.model_selection import train_test_split
 from matplotlib import pyplot as plt
+
 
 
 class FlightPredictor:
@@ -42,10 +43,29 @@ class FlightPredictor:
 
     def clean_up_data(self, X, y):
         jointDf = X.join(y)
-        jointDf = pd.get_dummies(jointDf, columns=['DayOfWeek', 'Reporting_Airline'], prefix=['weekday',
-                                                                               'airline'])
+        jointDf = get_dummies(jointDf)
+        add_arrival_departure_bins(jointDf)
+        make_flight_date_canonical(jointDf)
         print(jointDf.head())
-        # TODO keep goin'
 
     def visualize(self, X, y):
         pass
+
+
+def add_arrival_departure_bins(jointDf):
+    two_hour_bins = np.linspace(0, 2400, num=13)
+    two_hour_labels = np.rint(np.linspace(0, 22, 12))
+    jointDf["DepBin"] = pd.cut(jointDf['CRSDepTime'], bins=two_hour_bins,
+                               labels=two_hour_labels)
+    jointDf["ArrBin"] = pd.cut(jointDf['CRSArrTime'], bins=two_hour_bins,
+                               labels=two_hour_labels)
+    jointDf.drop(['CRSDepTime', 'CRSArrTime'], axis=1)
+
+
+def get_dummies(jointDf):
+    return pd.get_dummies(jointDf, columns=['DayOfWeek', 'Reporting_Airline'],
+                          prefix=['weekday', 'airline'])
+
+
+def make_flight_date_canonical(jointDf):
+    pass
