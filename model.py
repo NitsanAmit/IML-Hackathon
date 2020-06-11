@@ -3,34 +3,39 @@
      Introduction to Machine Learning (67577)
              IML HACKATHON, June 2020
 
-Author(s): Nitsan, Shahar, Gal, Noa
+Author(s): Nitsan Shahar Gal Noa
 
 ===================================================
 """
 import random
 import pandas as pd
 import numpy as np
+from plotnine import *
 from sklearn import datasets, linear_model
 from sklearn.model_selection import train_test_split
 from matplotlib import pyplot as plt
 
+CSV_PATH = "data/train_data.csv"
+
+
 
 
 class FlightPredictor:
+
     def __init__(self, path_to_weather=''):
         """
         Initialize an object from this class.
         @param path_to_weather: The path to a csv file containing weather data.
         """
         random.seed(5)
-        raw_data = pd.read_csv('data/train_data.csv')
+        raw_data = pd.read_csv(CSV_PATH)
         X = raw_data.drop(["ArrDelay", "DelayFactor"], axis=1)
         y = raw_data[["ArrDelay", "DelayFactor"]]
-        x_temp, x_test, y_temp, y_test = train_test_split(X, y, test_size=0.2)
-        x_train, x_validate, y_train, y_validate = train_test_split(x_temp, y_temp, test_size=0.2)
+        self.x_temp, self.x_test, self.y_temp, self.y_test = train_test_split(X, y, test_size=0.2)
+        self.x_train, self.x_validate, self.y_train, self.y_validate = train_test_split(self.x_temp, self.y_temp, test_size=0.2)
 
         # Only use x_train and y_train!!!!!!!!!!!!!!!
-        self.clean_up_data(x_train, y_train)
+        self.clean_up_data(self.x_train, self.y_train)
 
     def predict(self, x):
         """
@@ -46,10 +51,23 @@ class FlightPredictor:
         jointDf = get_dummies(jointDf)
         add_arrival_departure_bins(jointDf)
         make_flight_date_canonical(jointDf)
-        print(jointDf.head())
+        factorize_delay(jointDf)
 
-    def visualize(self, X, y):
-        pass
+        self.visualize(jointDf)
+        # TODO keep goin'
+
+    def visualize(self, df):
+        # Airport vs. delay
+        df["is_delayed"] = df['DelayFactor'].astype(int) + 1
+        print(df["is_delayed"])
+
+        p = (ggplot(df, aes(x='Dest', y='is_delayed')) + geom_line(size=2, group=1) +
+         geom_point(size=6, shape='.', fill="white"))  #dest
+
+        print(p)
+
+        # ggplot(df, aes(x='BP')) + geom_histogram(binwidth=5) #origin
+
 
 
 def add_arrival_departure_bins(jointDf):
@@ -69,3 +87,10 @@ def get_dummies(jointDf):
 
 def make_flight_date_canonical(jointDf):
     pass
+
+def factorize_delay(jointDf):
+    # fix DelayFactor to numeric
+    delay_factor = jointDf['DelayFactor'].factorize()
+    jointDf['DelayFactor'] = delay_factor[0]
+    print(delay_factor[1])
+
