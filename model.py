@@ -95,7 +95,6 @@ def add_is_same_state(jointDf):
 
 def add_weather_data(jointDf, path_to_weather):
     weather_data = pd.read_csv(path_to_weather)
-    
 
 
 def factorize_delay(jointDf):
@@ -105,24 +104,10 @@ def factorize_delay(jointDf):
     print(delay_factor[1])
 
 
-def add_holidays_column(df):
-    pass
-    # snow_in
-    # df = df.join((cross_holidays(df))['Holiday'])
-    # return df
-
 def cross_holidays(jointDf):
     jointDf['FlightDate'] = pd.to_datetime(jointDf['FlightDate'])
-    # dateRange = pd.date_range(start=jointDf['FlightDate'].min(), end=jointDf[
-    #     'FlightDate'].max())
-    # df = pd.DataFrame()
-    # df['Date'] = dateRange
     cal = calendar()
     holidays = cal.holidays(start=jointDf['FlightDate'].min(), end=jointDf[
         'FlightDate'].max())
-
-    #TODO make sure holiday only contains the date that Holiday == true
-    #TODO make sure holiday is 1-dimenstional
-
     jointDf["is_holiday"] = jointDf["FlightDate"].isin(holidays)
     return
