@@ -52,6 +52,10 @@ class FlightPredictor:
         make_flight_date_canonical(jointDf)
         factorize_delay(jointDf)
         add_is_same_state(jointDf)
+        if path_to_weather:
+            add_weather_data(jointDf, path_to_weather)
+        cross_holidays(jointDf)
+        add_weather_data(jointDf, path_to_weather)
         jointDf = drop_features(jointDf)
         # if path_to_weather:
         #     add_weather_data(jointDf, path_to_weather)
@@ -105,10 +109,13 @@ def add_is_same_state(jointDf):
 
 def add_weather_data(jointDf, path_to_weather):
     weather_data = pd.read_csv(path_to_weather)
-
+    weather_data['day'] = pd.to_datetime(weather_data['day'])
     #TODO match jointDf["FlightDate"] to weather_data["date"]
     #TODO match jointDf["Origin" or "Dest"] to weather_data["station"]
     #TODO create columns in jointDf based on weather_data columns:
+    pd.merge(jointDf, weather_data, left_on="FlightDate", right_on="day")
+
+    # jointDf["snowed"]
 
     # snow_in -> snowed (boolean) (could be None / -99 / 0 if data is missing)
     # precip_in -> precipitation (float) (check possible nan types)
