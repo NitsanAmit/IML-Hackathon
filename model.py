@@ -60,7 +60,7 @@ class FlightPredictor:
         # regression
         regression = self._lasso_regression.predict(df)
         # classification
-        classification = self._logistic_regression.predict(df)
+        classification = self._logistic_regression.predict(df) #TODO - STRINGS
         prediction = pd.DataFrame({'PredArrDelay': regression, 'PredDelayFactor' : classification})
         return prediction
 
