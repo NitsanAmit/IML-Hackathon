@@ -61,20 +61,45 @@ class FlightPredictor:
         # if path_to_weather:
         #     add_weather_data(joint_df, path_to_weather)
         # cross_holidays(joint_df)
-        self.visualize(joint_df)
         print(joint_df.head())
         # TODO keep goin'
 
-    def visualize(self, df):
-        # Airport vs. delay
-        df["is_delayed"] = (df['DelayFactor'] != -1).astype(int)
-        print(df["is_delayed"])
 
-        # Distance vs. delay time
-        p = (ggplot(df, aes(x='Distance', y='ArrDelay', color='is_delayed')) + geom_point())
-        print(p)
+def visualize(df):
+    # Airport vs. delay
+    df["is_delayed"] = (df['DelayFactor'] != -1).astype(int)
 
-        # df_dest_delayed = df.groupby('Dest').agg({'is_delayed': ['mean']})
+    p1 = (ggplot(df, aes(x='Distance', y='ArrDelay', color='is_delayed')) + geom_point() +
+         labs(title="Distance vs. delay time, correlation: {}".format(df['ArrDelay'].corr(df['Distance']))))
+    print(p1)
+
+    p2 = (ggplot(df, aes(x='CRSElapsedTime', y='ArrDelay', color='is_delayed')) + geom_point() +
+         labs(title="CRSElapsedTime vs. delay time, correlation: {}".format(df['ArrDelay'].corr(df['CRSElapsedTime']))))
+    print(p2)
+
+    p3 = (ggplot(df, aes(x='CanonicalFlightDate', y='ArrDelay', color='is_delayed')) + geom_point() +
+         labs(title="CanonicalFlightDate vs. delay time, correlation: {}".format(df['ArrDelay'].corr(df['CanonicalFlightDate']))))
+    print(p3)
+
+    p4 = (ggplot(df, aes(x='DepBin', y='ArrDelay', color='is_delayed')) + geom_point() +
+         labs(title="DepBin vs. delay time, correlation: {}".format(df['ArrDelay'].corr(df['DepBin']))))
+    print(p4)
+
+    p5 = (ggplot(df, aes(x='ArrBin', y='ArrDelay', color='is_delayed')) + geom_point() +
+         labs(title="ArrBin vs. delay time, correlation: {}".format(df['ArrDelay'].corr(df['ArrBin']))))
+    print(p5)
+
+    numeric_columns = pd.concat([df['ArrBin'], df['DepBin'], df['CanonicalFlightDate'], df['CRSElapsedTime'],
+                                 df['Distance'], df['ArrDelay']], axis=1)
+    cormat = numeric_columns.corr(method='pearson').round(2)
+    cormat.index.name = 'variable2'
+    cormat.reset_index(inplace=True)
+    melted_cormat = pd.melt(cormat, id_vars=['variable2'])
+    p_corr = ggplot(melted_cormat, aes(x='variable', y='variable2', fill='value')) + geom_tile()\
+             + labs(title="Numeric Columns Correlation Table")
+    print(p_corr)
+
+    # df_dest_delayed = df.groupby('Dest').agg({'is_delayed': ['mean']})
 
 
 def remove_outliers(joint_df):
@@ -95,20 +120,30 @@ def add_arrival_departure_bins(joint_df):
                                 labels=two_hour_labels)
     joint_df.drop(['CRSDepTime', 'CRSArrTime'], axis=1)
 
+def add_arrival_departure_bins(jointDf):
+    two_hour_bins = np.linspace(0, 2400, num=25)
+    two_hour_labels = np.rint(np.linspace(0, 23, 24))
+    jointDf["DepBin"] = pd.cut(jointDf['CRSDepTime'], bins=two_hour_bins,
+                               labels=two_hour_labels)
+    jointDf["ArrBin"] = pd.cut(jointDf['CRSArrTime'], bins=two_hour_bins,
+                               labels=two_hour_labels)
+    jointDf.drop(['CRSDepTime', 'CRSArrTime'], axis=1)
+
 
 def get_dummies(joint_df):
     return pd.get_dummies(joint_df, columns=['DayOfWeek', 'Reporting_Airline', 'Dest', 'Origin'],
                           prefix=['weekday', 'airline', 'DestAirport', 'OriginAirport'])
 
+
 def drop_features(joint_df):
-    return joint_df.drop(['OriginCityName', 'OriginState', 'DestCityName', 'DestState'], axis=1)
+    return joint_df.drop(['OriginCityName', 'OriginState', 'DestCityName',
+                         'DestState', 'Flight_Number_Reporting_Airline', 'CRSElapsedTime'], axis=1)
 
 
 def make_flight_date_canonical(joint_df):
     joint_df["CanonicalFlightDate"] = pd.DataFrame(pd.to_datetime(joint_df["FlightDate"], errors="coerce")).values.astype(
         float) / 10 ** 10
     joint_df["CanonicalFlightDate"] = joint_df["CanonicalFlightDate"] - np.min(joint_df["CanonicalFlightDate"])
-
 
 
 def add_is_same_state(joint_df):
@@ -132,12 +167,10 @@ def add_weather_data(joint_df, path_to_weather):
     # min_temp_f -> min_temp (float)
 
 
-
 def factorize_delay(joint_df):
     # fix DelayFactor to numeric
     delay_factor = joint_df['DelayFactor'].factorize()
     joint_df['DelayFactor'] = delay_factor[0]
-    print(delay_factor[1])
 
 
 def cross_holidays(joint_df):
@@ -147,7 +180,3 @@ def cross_holidays(joint_df):
         'FlightDate'].max())
     joint_df["is_holiday"] = joint_df["FlightDate"].isin(holidays)
     return
-
-
-def drop_outliers(jointDf):
-    pass
