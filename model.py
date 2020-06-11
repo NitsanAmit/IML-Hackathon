@@ -11,9 +11,7 @@ import random
 import pandas as pd
 import numpy as np
 from plotnine import *
-from sklearn import datasets, linear_model
 from sklearn.model_selection import train_test_split
-from matplotlib import pyplot as plt
 from pandas.tseries.holiday import USFederalHolidayCalendar as calendar
 from sklearn.linear_model import LassoCV
 from sklearn.multiclass import OneVsRestClassifier
@@ -39,7 +37,6 @@ class FlightPredictor:
 
         self.data_to_pred = x_train  # TODO - DELETE!!!!!!!!!!!!!!!!!1
 
-        # Only use x_train and y_train!!!!!!!!!!!!!!!
         train = self.clean_up_train(path_to_weather, x_train, y_train)
         self._cols_name = train.columns.values.tolist()
         self.y_train_regression = train.loc[:, "ArrDelay"].to_frame()
@@ -52,7 +49,7 @@ class FlightPredictor:
 
         print(self._lasso_regression.score(self.x_train, self.y_train_regression.values.ravel()))
         # classification
-        self._regression_model = OneVsRestClassifier(DecisionTreeClassifier(max_depth=17))
+        self._regression_model = OneVsRestClassifier(DecisionTreeClassifier(max_depth=11))
         self._regression_model.fit(self.x_train, self.y_train_classification)
 
         print(self._regression_model.score(self.x_train, self.y_train_classification))
@@ -72,11 +69,12 @@ class FlightPredictor:
         # classification
         classification = self._regression_model.predict(df)  # TODO - STRINGS
         prediction = pd.DataFrame({'PredArrDelay': regression, 'PredDelayFactor': classification})
+        prediction['PredDelayFactor'] = prediction['PredDelayFactor'].apply(self.get_label)
         return prediction
 
     def clean_up_train(self, path_to_weather, X, y):
         joint_df = X.join(y)
-        joint_df = factorize_delay(joint_df)
+        joint_df = self.factorize_delay(joint_df)
         joint_df = remove_outliers(joint_df)
         joint_df = clean_up_data(joint_df, path_to_weather)
         return joint_df
@@ -89,6 +87,17 @@ class FlightPredictor:
             if self._cols_name[i] not in test_col_names:
                 joint_df.insert(loc=i, column=self._cols_name[i], value=np.zeros(X.shape[0]))
         return joint_df
+
+    def factorize_delay(self, joint_df):
+        # fix DelayFactor to numeric
+        self.delay_factor = joint_df['DelayFactor'].factorize()
+        joint_df['DelayFactor'] = self.delay_factor[0]
+        return joint_df
+
+    def get_label(self, row):
+        if row != -1:
+            return self.delay_factor[1][row]
+        return np.nan
 
 
 def cv_dt(X, y):
@@ -241,14 +250,6 @@ def remove_weather_outliers(joint_df):
                                3.5 * np.std(joint_df[col_name].astype('float'))] = mean
         joint_df[col_name][joint_df['FlightDate'].str.contains("-0[3-9]-", na=False)] = 0
 
-    return joint_df
-
-
-def factorize_delay(joint_df):
-    # fix DelayFactor to numeric
-    delay_factor = joint_df['DelayFactor'].factorize()
-    joint_df['DelayFactor'] = delay_factor[0]
-    print(delay_factor[1])
     return joint_df
 
 
