@@ -72,6 +72,14 @@ class FlightPredictor:
         prediction['PredDelayFactor'] = prediction['PredDelayFactor'].apply(self.get_label)
         return prediction
 
+    def score(self):
+        m = len(self.y_test)
+        y_hat = self._regression_model.predict(self.x_test)
+        accuracy = np.sum(self.y_test == y_hat) / m
+        print(accuracy)
+        print(self._lasso_regression.score(self.x_test,
+                                           self.y_test.values.reval()))
+
     def clean_up_train(self, path_to_weather, X, y):
         joint_df = X.join(y)
         joint_df = self.factorize_delay(joint_df)
