@@ -173,12 +173,11 @@ def factorize_delay(joint_df):
 
 
 def cross_holidays(joint_df):
-    joint_df['FlightDate'] = pd.to_datetime(joint_df['FlightDate'])
+    joint_df['FlightDate'] = pd.to_datetime(joint_df['FlightDate'], infer_datetime_format=True)
     cal = calendar()
     holidays = cal.holidays(start=joint_df['FlightDate'].min(), end=joint_df[
         'FlightDate'].max())
     joint_df["is_holiday"] = joint_df["FlightDate"].isin(holidays)
-    joint_df = joint_df.drop(['FlightDate'], axis=1)
     return joint_df
 
 
