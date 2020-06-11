@@ -10,6 +10,7 @@ Author(s): Nitsan, Shahar, Gal, Noa
 import random
 import pandas as pd
 import numpy as np
+from plotnine import *
 from sklearn import datasets, linear_model
 from sklearn.model_selection import train_test_split
 from matplotlib import pyplot as plt
@@ -58,7 +59,7 @@ class FlightPredictor:
         pass
 
     def cross_holidays(self):
-        # self.['Date'] = pd.to_datetime()
+        self.['Date'] = pd.to_datetime()
         dr = pd.date_range(start='2010-01-01', end='2019-12-31')
         # TODO add
         df = pd.DataFrame()
@@ -109,3 +110,16 @@ def factorize_delay(jointDf):
     jointDf['DelayFactor'] = delay_factor[0]
     print(delay_factor[1])
 
+def add_holidays_column(self):
+    pass
+
+def cross_holidays(df):
+    df['Date'] = pd.to_datetime()
+    dr = pd.date_range(start='2010-01-01', end='2019-12-31')
+    # TODO add
+    df = pd.DataFrame()
+    df['Date'] = dr
+    cal = calendar()
+    holidays = cal.holidays(start=dr.min(), end=dr.max())
+    df['Holiday'] = df['Date'].isin(holidays)
+    print(df)
