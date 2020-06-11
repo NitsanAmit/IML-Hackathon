@@ -57,7 +57,6 @@ class FlightPredictor:
         if path_to_weather:
             add_weather_data(joint_df, path_to_weather)
         cross_holidays(joint_df)
-        add_weather_data(joint_df, path_to_weather)
         joint_df = drop_features(joint_df)
         # if path_to_weather:
         #     add_weather_data(joint_df, path_to_weather)
@@ -118,11 +117,11 @@ def add_is_same_state(joint_df):
 
 def add_weather_data(joint_df, path_to_weather):
     weather_data = pd.read_csv(path_to_weather)
-    weather_data['day'] = pd.to_datetime(weather_data['day'])
+    # weather_data.rename(columns={'day': 'FlightDate'})
+    pd.merge(left=joint_df, right=weather_data, right_on='FlightDate', left_on='day')
     #TODO match jointDf["FlightDate"] to weather_data["date"]
     #TODO match jointDf["Origin" or "Dest"] to weather_data["station"]
     #TODO create columns in jointDf based on weather_data columns:
-    pd.merge(joint_df, weather_data, left_on="FlightDate", right_on="day")
 
     # jointDf["snowed"]
 
@@ -148,3 +147,7 @@ def cross_holidays(joint_df):
         'FlightDate'].max())
     joint_df["is_holiday"] = joint_df["FlightDate"].isin(holidays)
     return
+
+
+def drop_outliers(jointDf):
+    pass
