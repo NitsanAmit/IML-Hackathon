@@ -18,7 +18,7 @@ from pandas.tseries.holiday import USFederalHolidayCalendar as calendar
 from sklearn.linear_model import LassoCV
 
 CSV_PATH = "data/train_data.csv"
-
+disqualify_weather = False
 
 class FlightPredictor:
     def __init__(self, path_to_weather=None):
@@ -76,7 +76,7 @@ def clean_up_data(joint_df, path_to_weather):
     joint_df = add_arrival_departure_bins(joint_df)
     joint_df = make_flight_date_canonical(joint_df)
     joint_df = add_is_same_state(joint_df)
-    if path_to_weather: # TODO         if path_to_weather and not disqualify_weather:
+    if path_to_weather and not disqualify_weather:
         add_weather_data(joint_df, path_to_weather)
     joint_df = get_dummies(joint_df)
     joint_df = cross_holidays(joint_df)
@@ -181,9 +181,10 @@ def add_weather_data(joint_df, path_to_weather):
     keys = [tuple(x) for x in joint_df[["FlightDate", "Origin"]].to_numpy()]
 
     rows_with_weather_data = pd.Series(keys).isin(weather_data.index).array
-    joint_df = joint_df[rows_with_weather_data] # TODO maybe check percent of entries removed,
-    # TODO and decided whether to proceed or not (if not doing this - make sure to not add to
-    #  test data)
+    percentage = 1-(rows_with_weather_data.sum()/joint_df.shape[0])
+    if percentage > 0.05:
+        return
+    joint_df = joint_df[rows_with_weather_data]
     keys = pd.Series(keys)[rows_with_weather_data].tolist()
     weather_data_rows = weather_data.loc[keys]
     weather_data_rows = weather_data_rows.reset_index(drop=True)
