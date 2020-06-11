@@ -86,7 +86,10 @@ def get_dummies(jointDf):
 
 
 def make_flight_date_canonical(jointDf):
-    pass
+    jointDf["CanonicalFlightDate"] = pd.DataFrame(pd.to_datetime(jointDf["FlightDate"], errors="coerce")).values.astype(
+        float) / 10 ** 10
+    jointDf["CanonicalFlightDate"] = jointDf["CanonicalFlightDate"] - np.min(jointDf["CanonicalFlightDate"])
+
 
 
 def add_is_same_state(jointDf):
