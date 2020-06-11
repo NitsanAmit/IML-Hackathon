@@ -34,7 +34,7 @@ class FlightPredictor:
         self.x_train, self.x_validate, self.y_train, self.y_validate = train_test_split(x_temp, y_temp, test_size=0.2)
 
         # Only use x_train and y_train!!!!!!!!!!!!!!!
-        self.clean_up_data(self.x_train, self.y_train)
+        self.clean_up_data(path_to_weather)
 
     def predict(self, x):
         """
@@ -95,7 +95,7 @@ def add_is_same_state(jointDf):
 
 def add_weather_data(jointDf, path_to_weather):
     weather_data = pd.read_csv(path_to_weather)
-
+    
 
 
 def factorize_delay(jointDf):
@@ -106,8 +106,10 @@ def factorize_delay(jointDf):
 
 
 def add_holidays_column(df):
-    df = df.join((cross_holidays(df))['Holiday'])
-    return df
+    pass
+    # snow_in
+    # df = df.join((cross_holidays(df))['Holiday'])
+    # return df
 
 def cross_holidays(jointDf):
     jointDf['FlightDate'] = pd.to_datetime(jointDf['FlightDate'])
