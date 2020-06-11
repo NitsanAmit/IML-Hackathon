@@ -52,9 +52,11 @@ class FlightPredictor:
         make_flight_date_canonical(jointDf)
         factorize_delay(jointDf)
         add_is_same_state(jointDf)
-        if path_to_weather:
-            add_weather_data(jointDf, path_to_weather)
-        cross_holidays(jointDf)
+        jointDf = drop_features(jointDf)
+        # if path_to_weather:
+        #     add_weather_data(jointDf, path_to_weather)
+        # cross_holidays(jointDf)
+        self.visualize(jointDf)
         print(jointDf.head())
         # TODO keep goin'
 
@@ -64,10 +66,12 @@ class FlightPredictor:
         df["is_delayed"] = (df['DelayFactor'] != -1).astype(int)
         print(df["is_delayed"])
 
-        df_dest_delayed = df.groupby('Dest').agg({'is_delayed': ['mean']})
-        df_origin_delayed = df.groupby('Origin').agg({'is_delayed': ['mean']})
+        # Distance vs. delay time
+        p = (ggplot(df, aes(x='Distance', y='ArrDelay', color='is_delayed')) + geom_point())
+        print(p)
 
-        print(df_dest_delayed)
+        # df_dest_delayed = df.groupby('Dest').agg({'is_delayed': ['mean']})
+
 
 
 def add_arrival_departure_bins(jointDf):
@@ -81,8 +85,11 @@ def add_arrival_departure_bins(jointDf):
 
 
 def get_dummies(jointDf):
-    return pd.get_dummies(jointDf, columns=['DayOfWeek', 'Reporting_Airline'],
-                          prefix=['weekday', 'airline'])
+    return pd.get_dummies(jointDf, columns=['DayOfWeek', 'Reporting_Airline', 'Dest', 'Origin'],
+                          prefix=['weekday', 'airline', 'DestAirport', 'OriginAirport'])
+
+def drop_features(jointDf):
+    return jointDf.drop(['OriginCityName', 'OriginState', 'DestCityName', 'DestState'], axis=1)
 
 
 def make_flight_date_canonical(jointDf):
