@@ -16,8 +16,9 @@ from sklearn.model_selection import train_test_split
 from matplotlib import pyplot as plt
 from pandas.tseries.holiday import USFederalHolidayCalendar as calendar
 from sklearn.linear_model import LassoCV
-from sklearn.linear_model import LogisticRegressionCV
-from sklearn.linear_model import LogisticRegression
+from sklearn.multiclass import OneVsRestClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.model_selection import cross_val_score
 
 CSV_PATH = "data/train_data.csv"
 disqualify_weather = False
@@ -51,12 +52,11 @@ class FlightPredictor:
 
         print(self._lasso_regression.score(self.x_train, self.y_train_regression.values.ravel()))
         # classification
-        # self._logistic_regression = LogisticRegressionCV(Cs=10, cv=5, multi_class='multinomial'). \
-        #     fit(self.x_train, self.y_train_classification.values.ravel())
-        self._logistic_regression = LogisticRegression(multi_class='ovr').fit(self.x_train,
-                                                                              self.y_train_classification.values.ravel())
+        self._regression_model = OneVsRestClassifier(DecisionTreeClassifier(max_depth=17))
+        self._regression_model.fit(self.x_train, self.y_train_classification)
 
-        print(self._logistic_regression.score(self.x_train, self.y_train_classification.values.ravel()))
+        print(self._regression_model.score(self.x_train, self.y_train_classification))
+        print(self._regression_model.n_classes_)
 
     def predict(self, x):
         """
@@ -70,7 +70,7 @@ class FlightPredictor:
         # regression
         regression = self._lasso_regression.predict(df)
         # classification
-        classification = self._logistic_regression.predict(df)  # TODO - STRINGS
+        classification = self._regression_model.predict(df)  # TODO - STRINGS
         prediction = pd.DataFrame({'PredArrDelay': regression, 'PredDelayFactor': classification})
         return prediction
 
@@ -89,6 +89,16 @@ class FlightPredictor:
             if self._cols_name[i] not in test_col_names:
                 joint_df.insert(loc=i, column=self._cols_name[i], value=np.zeros(X.shape[0]))
         return joint_df
+
+
+def cv_dt(X, y):
+    depth = []
+    for i in range(3, 20):
+        clf = DecisionTreeClassifier(max_depth=i)
+        scores = cross_val_score(estimator=clf, X=X, y=y, cv=7, n_jobs=4)
+        depth.append(scores.mean())
+    idx = np.argmax(np.asarray(depth))
+    return idx + 3
 
 
 def clean_up_data(joint_df, path_to_weather):
@@ -218,7 +228,7 @@ def add_weather_data(joint_df, path_to_weather):
 def remove_weather_outliers(joint_df):
     for col_name in ["snow_in", "precip_in", "avg_wind_speed_kts"]:
         mean = joint_df[((joint_df[col_name] != 'None') & (
-                    joint_df[col_name] != '-99') & ~joint_df[
+                joint_df[col_name] != '-99') & ~joint_df[
             col_name].isna())][col_name].astype('float').mean()
 
         joint_df[col_name] = joint_df[col_name].astype('string')
@@ -228,8 +238,8 @@ def remove_weather_outliers(joint_df):
         joint_df[col_name] = joint_df[col_name].astype('float')
         joint_df[col_name].loc[joint_df[col_name].astype('float') < 0] = mean
         joint_df[col_name].loc[abs(joint_df[col_name].astype('float') - mean) <
-                 3.5 * np.std(joint_df[col_name].astype('float'))] = mean
-        joint_df[col_name][joint_df['FlightDate'].str.contains("-0[3-9]-", na=False)]= 0
+                               3.5 * np.std(joint_df[col_name].astype('float'))] = mean
+        joint_df[col_name][joint_df['FlightDate'].str.contains("-0[3-9]-", na=False)] = 0
 
     return joint_df
 
