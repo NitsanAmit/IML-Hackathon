@@ -45,7 +45,7 @@ class FlightPredictor:
         """
         raise NotImplementedError
 
-    def clean_up_data(self, path_to_weather=''):
+    def clean_up_data(self, path_to_weather):
         jointDf = self.x_train.join(self.y_train)
         jointDf = get_dummies(jointDf)
         add_arrival_departure_bins(jointDf)
@@ -98,6 +98,17 @@ def add_is_same_state(jointDf):
 
 def add_weather_data(jointDf, path_to_weather):
     weather_data = pd.read_csv(path_to_weather)
+
+    #TODO match jointDf["FlightDate"] to weather_data["date"]
+    #TODO match jointDf["Origin" or "Dest"] to weather_data["station"]
+    #TODO create columns in jointDf based on weather_data columns:
+
+    # snow_in -> snowed (boolean) (could be None / -99 / 0 if data is missing)
+    # precip_in -> precipitation (float) (check possible nan types)
+    # avg_wind_speed_kts -> avg_wing_spd (float)
+    # avg_wind_drct -> avg_wind_dir (float)
+    # min_temp_f -> min_temp (float)
+
 
 
 def factorize_delay(jointDf):
