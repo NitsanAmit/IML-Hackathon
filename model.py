@@ -34,7 +34,7 @@ class FlightPredictor:
         self.x_train, self.x_validate, self.y_train, self.y_validate = train_test_split(x_temp, y_temp, test_size=0.2)
 
         # Only use x_train and y_train!!!!!!!!!!!!!!!
-        self.clean_up_data(self.x_train, self.y_train)
+        self.clean_up_data(path_to_weather)
 
     def predict(self, x):
         """
@@ -45,13 +45,15 @@ class FlightPredictor:
         """
         raise NotImplementedError
 
-    def clean_up_data(self, X, y):
-        jointDf = X.join(y)
+    def clean_up_data(self, path_to_weather=''):
+        jointDf = self.x_train.join(self.y_train)
         jointDf = get_dummies(jointDf)
         add_arrival_departure_bins(jointDf)
         make_flight_date_canonical(jointDf)
         factorize_delay(jointDf)
         add_is_same_state(jointDf)
+        if path_to_weather:
+            add_weather_data(jointDf, path_to_weather)
         print(jointDf.head())
         # TODO keep goin'
 
@@ -102,7 +104,11 @@ def make_flight_date_canonical(jointDf):
 
 
 def add_is_same_state(jointDf):
-    jointDf["SameState"] = np.rint(jointDf["OriginState"] == jointDf["DestState"])
+    jointDf["SameState"] = jointDf["OriginState"] == jointDf["DestState"]
+
+
+def add_weather_data(jointDf, path_to_weather):
+    weather_data = pd.read_csv(path_to_weather)
 
 
 def factorize_delay(jointDf):
