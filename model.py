@@ -21,6 +21,7 @@ from sklearn.linear_model import LogisticRegressionCV
 CSV_PATH = "data/train_data.csv"
 disqualify_weather = False
 
+
 class FlightPredictor:
     def __init__(self, path_to_weather=None):
         """
@@ -75,9 +76,9 @@ class FlightPredictor:
         test_col_names = joint_df.columns.values.tolist()
         for i in range(len(self._cols_name)):
             if self._cols_name[i] not in test_col_names:
-                joint_df.insert(loc=i, cloumn=self._cols_name[i], value=np.zeros(X.shape[0]))
+                joint_df.insert(loc=i, cloumn=self._cols_name[i],
+                                value=np.zeros(X.shape[0]))
         return joint_df
-
 
 
 def clean_up_data(joint_df, path_to_weather):
@@ -139,8 +140,9 @@ def visualize(df):
 
 def remove_outliers(joint_df):
     entries_before = joint_df.shape[0]
-    joint_df = joint_df[abs(joint_df["ArrDelay"] - np.mean(joint_df["ArrDelay"])) <
-                        3.5 * np.std(joint_df["ArrDelay"])]
+    joint_df = joint_df[
+        abs(joint_df["ArrDelay"] - np.mean(joint_df["ArrDelay"])) <
+        3.5 * np.std(joint_df["ArrDelay"])]
     joint_df = joint_df[~joint_df["ArrDelay"].isna()]
     removed = entries_before - joint_df.shape[0]
     print("Removed " + str(removed) + " rows in cleanup")
@@ -182,23 +184,49 @@ def add_is_same_state(joint_df):
 def add_weather_data(joint_df, path_to_weather):
     weather_data = pd.read_csv(path_to_weather,
                                index_col=["day", "station"],
-                               usecols=["day", "station", "precip_in", "avg_wind_speed_kts",
-                                        "avg_wind_drct", "snow_in"])
-    joint_df["FlightDate"] = joint_df["FlightDate"].apply(convert_date)  # change the date of our
+                               usecols=["day", "station", "precip_in",
+                                        "avg_wind_speed_kts",
+                                        "snow_in"])
+    joint_df["FlightDate"] = joint_df["FlightDate"].apply(
+        convert_date)  # change the date of our
     # df to match the weather data
 
     # create a list of tuples to be used as multi-index keys for weather_data
     keys = [tuple(x) for x in joint_df[["FlightDate", "Origin"]].to_numpy()]
 
     rows_with_weather_data = pd.Series(keys).isin(weather_data.index).array
-    percentage = 1-(rows_with_weather_data.sum()/joint_df.shape[0])
+    percentage = 1 - (rows_with_weather_data.sum() / joint_df.shape[0])
     if percentage > 0.05:
+        global disqualify_weather
+        disqualify_weather = True
         return
     joint_df = joint_df[rows_with_weather_data]
     keys = pd.Series(keys)[rows_with_weather_data].tolist()
     weather_data_rows = weather_data.loc[keys]
     weather_data_rows = weather_data_rows.reset_index(drop=True)
-    return pd.concat([joint_df, weather_data_rows], axis=1) # TODO clean outlier afterwards
+    p = pd.concat([joint_df, weather_data_rows], axis=1)
+    p.dropna(axis=0, inplace=True)
+    # TODO clean outlier afterwards
+    return remove_weather_outliers(p)
+
+
+def remove_weather_outliers(joint_df):
+    for col_name in ["snow_in", "precip_in", "avg_wind_speed_kts"]:
+        mean = joint_df[((joint_df[col_name] != 'None') & (
+                    joint_df[col_name] != '-99') & ~joint_df[
+            col_name].isna())][col_name].astype('float').mean()
+
+        joint_df[col_name] = joint_df[col_name].astype('string')
+        joint_df[col_name].loc[joint_df[col_name] == 'None'] = str(mean)
+        joint_df[col_name].loc[joint_df[col_name].isna()] = str(mean)
+
+        joint_df[col_name] = joint_df[col_name].astype('float')
+        joint_df[col_name].loc[joint_df[col_name].astype('float') < 0] = mean
+        joint_df[col_name].loc[abs(joint_df[col_name].astype('float') - mean) <
+                 3.5 * np.std(joint_df[col_name].astype('float'))] = mean
+        joint_df[col_name][joint_df['FlightDate'].str.contains("-0[3-9]-", na=False)]= 0
+
+    return joint_df
 
 
 def factorize_delay(joint_df):
@@ -210,7 +238,8 @@ def factorize_delay(joint_df):
 
 
 def cross_holidays(joint_df):
-    joint_df['FlightDate'] = pd.to_datetime(joint_df['FlightDate'], infer_datetime_format=True)
+    joint_df['FlightDate'] = pd.to_datetime(joint_df['FlightDate'],
+                                            infer_datetime_format=True)
     cal = calendar()
     holidays = cal.holidays(start=joint_df['FlightDate'].min(), end=joint_df[
         'FlightDate'].max())
@@ -222,6 +251,3 @@ def convert_date(str):
     strList = str.split("-")
     strList[0] = strList[0][2:4]
     return strList[2] + "-" + strList[1] + "-" + strList[0]
-
-
-
